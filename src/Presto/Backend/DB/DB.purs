@@ -23,6 +23,7 @@ module Presto.Backend.DB
   (
     useMasterClause,
     _getModelByName,
+    getModelByName',
     getModelByName,
     findOne,
     findAll,
@@ -63,6 +64,10 @@ foreign import _getModelByName :: forall a e. Fn2 Conn String (Eff (sequelize ::
 -- Add this clause if you want to force a query to be executed on Master DB
 useMasterClause :: forall t7. Options t7
 useMasterClause = (maybe mempty (assoc (opt "useMaster")) $ Just true)
+
+getModelByName' :: forall a e. Conn -> String -> Aff (sequelize :: SEQUELIZE | e) (Either Error (ModelOf a))
+getModelByName' conn mName = do
+    attempt $ liftEff $ runFn2 _getModelByName conn mName
 
 getModelByName :: forall a e. Model a => Conn -> Aff (sequelize :: SEQUELIZE | e) (Either Error (ModelOf a))
 getModelByName conn = do

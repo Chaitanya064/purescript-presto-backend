@@ -41,8 +41,11 @@ import Presto.Core.Types.API (class RestEndpoint, Headers)
 import Presto.Core.Types.Language.APIInteract (apiInteract)
 import Presto.Core.Types.Language.Flow (APIResult)
 import Presto.Core.Types.Language.Interaction (Interaction)
-import Sequelize.Class (class Model)
+import Sequelize.Class (class Model, modelName)
 import Sequelize.Types (Conn, Instance)
+import Sequelize.Types (Conn, Instance, ModelOf, SEQUELIZE)
+import Type.Prelude
+
 
 data BackendFlowCommands next st rt s =
       Ask (rt -> next)
@@ -94,6 +97,7 @@ data BackendFlowCommands next st rt s =
     | GetQueueIdxInMulti String Int Multi (Multi -> next)
     | Exec Multi (Either Error (Array Foreign) -> next)
     | RunSysCmd String (String -> next)
+    | GetModelByName Conn String (Either Error (ModelOf s) -> next)
 
     -- | HandleException
     -- | Await (Control s) (s -> next)
@@ -321,3 +325,8 @@ runSysCmd cmd = wrap $ RunSysCmd cmd id
 
 forkFlow :: forall st rt a. BackendFlow st rt a -> BackendFlow st rt Unit
 forkFlow flow = wrap $ Fork flow id
+
+getModelByName :: forall st rt a. Model a => Conn -> BackendFlow st rt (Either Error (ModelOf a))
+getModelByName conn = do
+  let mName = modelName (Proxy :: Proxy a)
+  wrap $ GetModelByName conn mName id

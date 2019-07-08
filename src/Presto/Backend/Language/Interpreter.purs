@@ -45,7 +45,10 @@ import Presto.Backend.SystemCommands (runSysCmd)
 import Presto.Backend.Types (BackendAff)
 import Presto.Core.Flow (runAPIInteraction)
 import Presto.Core.Language.Runtime.API (APIRunner)
-import Sequelize.Types (Conn)
+import Sequelize.Types (Conn, ModelOf)
+import Sequelize.Class (class Model) 
+import Presto.Backend.DB (getModelByName, getModelByName')
+import Unsafe.Coerce (unsafeCoerce)
 
 type InterpreterMT rt st err eff a = R.ReaderT rt (S.StateT st (E.ExceptT err (BackendAff eff))) a
 
@@ -145,6 +148,8 @@ interpret _ (DequeueInMulti listName multi next) = (R.lift <<< S.lift <<< E.lift
 interpret _ (GetQueueIdxInMulti listName index multi next) = (R.lift <<< S.lift <<< E.lift <<< liftEff <<< lindexMulti listName index $ multi) >>= (pure <<< next)
 
 interpret _ (Exec multi next) = (R.lift <<< S.lift <<< E.lift <<< execMulti $ multi) >>= (pure <<< next)
+
+interpret _ (GetModelByName conn p next) = (R.lift <<< S.lift <<< E.lift  <<< getModelByName' conn $ p) >>= (pure <<< next)
 
 interpret (BackendRuntime a connections c) (GetCacheConn cacheName next) = do
   maybeCache <- pure $ lookup cacheName connections
